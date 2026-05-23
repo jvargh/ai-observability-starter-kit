@@ -1,0 +1,28 @@
+graph LR
+    subgraph source["Telemetry Source"]
+        A["App Insights\nLog Analytics"]
+    end
+
+    subgraph surfaces["Three Viewing Surfaces"]
+        B["Agents Pane\n(built-in, zero setup)\nRuns, Errors, Tools,\nModels, Evals"]
+        C["Prebuilt Grafana\n(Azure-managed)\nAgent Framework,\nWorkflow, Foundry"]
+        D["Custom Dashboards\n(importable JSON)\nSummary Stats,\nLatency, Tokens"]
+    end
+
+    A --> B
+    A --> C
+    A --> D
+
+    B --> E["Quick health check\nno config needed"]
+    C --> F["Standard KPIs\nread-only, Save As to edit"]
+    D --> G["Deep investigation\nfully customizable"]
+
+    style source fill:#2d3748,stroke:#4a5568,color:#e2e8f0
+    style surfaces fill:#2d3748,stroke:#4a5568,color:#e2e8f0
+    style A fill:#3182ce,stroke:#2b6cb0,color:#fff
+    style B fill:#805ad5,stroke:#6b46c1,color:#fff
+    style C fill:#805ad5,stroke:#6b46c1,color:#fff
+    style D fill:#805ad5,stroke:#6b46c1,color:#fff
+    style E fill:#38a169,stroke:#2f855a,color:#fff
+    style F fill:#38a169,stroke:#2f855a,color:#fff
+    style G fill:#38a169,stroke:#2f855a,color:#fff

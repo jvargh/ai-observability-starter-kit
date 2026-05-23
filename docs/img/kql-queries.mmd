@@ -1,0 +1,30 @@
+graph LR
+    subgraph source["App Insights: requests table"]
+        A["invoke_agent spans\n(customDimensions,\nduration, success)"]
+    end
+
+    subgraph queries["KQL Queries"]
+        B["Volume + Success Rate\ntotal / success / failed\nby agent name"]
+        C["Latency Percentiles\np50 / p90 / p95 / p99\nmax duration"]
+        D["Session Activity\nby session ID\n5-min time buckets"]
+        E["Token Usage\ninput + output tokens\nsum / avg consumption"]
+    end
+
+    A --> B
+    A --> C
+    A --> D
+    A --> E
+
+    B --> F["Grafana Dashboard\npanels + alerts"]
+    C --> F
+    D --> F
+    E --> F
+
+    style source fill:#2d3748,stroke:#4a5568,color:#e2e8f0
+    style queries fill:#2d3748,stroke:#4a5568,color:#e2e8f0
+    style A fill:#3182ce,stroke:#2b6cb0,color:#fff
+    style B fill:#805ad5,stroke:#6b46c1,color:#fff
+    style C fill:#805ad5,stroke:#6b46c1,color:#fff
+    style D fill:#805ad5,stroke:#6b46c1,color:#fff
+    style E fill:#805ad5,stroke:#6b46c1,color:#fff
+    style F fill:#38a169,stroke:#2f855a,color:#fff
