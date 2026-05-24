@@ -9,6 +9,9 @@
 3. [Deploy and run](#3-deploy-and-run)
    - 3.1 [What this starter kit contains](#31-what-this-starter-kit-contains)
    - 3.2 [Running the kit](#32-running-the-kit)
+     - [Post-deployment validation](#post-deployment-validation)
+     - [What a successful deployment looks like](#what-a-successful-deployment-looks-like)
+     - [Teardown](#teardown)
    - 3.3 [What the starter kit enables](#33-what-the-starter-kit-enables)
 4. [Evaluation: agent evaluators and custom checks](#4-evaluation-agent-evaluators-and-custom-checks)
    - 4.1 [Two evaluation paths](#41-two-evaluation-paths)
@@ -333,7 +336,7 @@ The KQL queries above are useful for ad-hoc investigation, but for day-to-day mo
 
 ![Three viewing surfaces: from telemetry to dashboards](img/viewing-surfaces.png)
 
-### 6.3 App Insights Agents pane (built-in, zero setup)
+### 6.3 App Insights Agents pane
 
 The **Agents (preview)** pane in Application Insights is the fastest way to see agent health. It populates automatically from the OpenTelemetry spans this kit emits, with no dashboard import or configuration required.
 
@@ -352,7 +355,7 @@ After a successful run, the pane shows:
 
 Access it from App Insights > left menu > **Agents (Preview)**. Set the time range to "Last 48 hours" to clear past the 15-30 minute rollup lag.
 
-### 6.4 Prebuilt Grafana dashboards (Azure-managed)
+### 6.4 Prebuilt Grafana dashboards
 
 Three Azure-managed dashboards ship out of the box and populate from the same telemetry:
 
@@ -379,7 +382,7 @@ The **Agent Framework** dashboard is the most comprehensive, covering operations
 | Agent Utilization Heatmap | Activity intensity by agent and time bucket | Visualize traffic patterns and idle periods |
 
 
-### 6.5 Custom dashboards (importable JSON)
+### 6.5 Custom dashboards
 
 The kit ships two importable dashboard JSON files in `artifacts/grafana/`. The primary dashboard (`agent-observability-dashboard.json`) provides a full operational overview:
 
