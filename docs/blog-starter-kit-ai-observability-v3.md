@@ -50,7 +50,7 @@ None of these failures show up in load balancer logs or a generic resource dashb
 * **Scheduled-query alerts** that fire on error rate and latency regression, not just uptime.
 * **Dashboards** that surface tokens, models, tools, and errors in one place for operators and on-call.
 
-Each of those pieces is well-documented in isolation, but wiring them together across Microsoft Foundry, Azure Application Insights, Log Analytics, Azure Monitor, and Grafana takes most teams several weeks of integration work, much of it re-derived. This starter kit ships all five as a single end-to-end deployment, validated by 26 post-deploy checks, so you spend your time on the agent rather than the plumbing.
+None of those pieces are new. The hard part is wiring them together correctly. This starter kit ships the wiring (an instrumented agent, evaluators bound to the right trace fields, a red-team taxonomy, an importable Grafana dashboard, and 26 post-deploy checks) in one command, so you start from a known-good baseline instead of assembling one.
 
 The rest of this section shows how the kit wires those pieces together. Sections 2 onward cover deployment, evaluation, red-teaming, observability surfaces, and teardown.
 
