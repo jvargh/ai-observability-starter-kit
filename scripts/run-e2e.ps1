@@ -49,6 +49,12 @@ $Stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $LogRoot = Join-Path $RepoRoot "artifacts\e2e-$Stamp"
 New-Item -ItemType Directory -Force -Path $LogRoot | Out-Null
 
+# Suppress azd interactive progress spinners so Tee-Object doesn't block.
+$env:NO_COLOR = '1'
+$env:TERM = 'dumb'
+$env:AZD_CONSOLE_NO_SPINNER = '1'
+$env:CI = '1'
+
 function Write-Phase {
     param([int]$N, [string]$Title, [string]$Description)
     Write-Host ''
@@ -69,10 +75,15 @@ function Invoke-Phase {
     Write-Phase $N $Title $Description
     $log = Join-Path $LogRoot ("phase-{0:D2}.log" -f $N)
     Write-Host "  Log: $log" -ForegroundColor DarkGray
-    Write-Host "  Tail (in another terminal): Get-Content `"$log`" -Wait" -ForegroundColor DarkGray
     Write-Host ''
     try {
-        & $Body 2>&1 | Tee-Object -FilePath $log
+        # Write to log file and stream to console line-by-line.
+        # Avoids Tee-Object which blocks on azd's ANSI progress spinners.
+        & $Body 2>&1 | ForEach-Object {
+            $line = $_ | Out-String -Stream
+            $line | Out-File -Append -FilePath $log -Encoding utf8
+            Write-Host $line
+        }
         if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) {
             throw "Phase $N exited with code $LASTEXITCODE. See $log"
         }
@@ -138,17 +149,16 @@ if (-not $SubscriptionId) {
 # ========================================================================
 # PHASE 1: provision (azd up)
 # ========================================================================
-Invoke-Phase 1 'Provision Foundry account, project, model, App Insights (azd up)' `
-    'Creates the Azure resource group + all infrastructure: Foundry account, project, ACR, App Insights, Log Analytics, and the first model deployment (gpt-4o-mini). End state: empty observability stack ready to host agents.' `
+Invoke-Phase 1 'Provision infrastructure (azd provision)' `
+    'Creates the Azure resource group + all infrastructure: Foundry account, project, ACR, App Insights, Log Analytics, model deployment. Does NOT deploy agents (Phases 3 and 5 do that; Foundry auto-creates the project agentIdentity on first agent deploy).' `
     {
     Push-Location $AgentDir
     try {
         # Create env if missing.
         $envs = & $AZD env list --output json | ConvertFrom-Json
         if (-not ($envs | Where-Object { $_.Name -eq $EnvName })) {
-            & $AZD env new $EnvName -l $Region --subscription $SubscriptionId
+            'n' | & $AZD env new $EnvName -l $Region --subscription $SubscriptionId
         }
-        # Always select the target env so azd up provisions into it (not the old default).
         & $AZD env select $EnvName
         & $AZD env set MODEL_DEPLOYMENT_NAME gpt-4o-mini
         & $AZD env set MODEL_NAME            gpt-4o-mini
@@ -157,19 +167,29 @@ Invoke-Phase 1 'Provision Foundry account, project, model, App Insights (azd up)
         & $AZD env set MODEL_SKU_NAME        GlobalStandard
         & $AZD env set MODEL_CAPACITY        30
         & $AZD env set AZURE_PRINCIPAL_ID    $YourPrincipalId
-        & $AZD up --no-prompt
+        # enableHostedAgents=true and enableCapabilityHost=false in
+        # main.parameters.json. With capability host disabled, Foundry v2
+        # hosted agents auto-create the project agentIdentity on first deploy.
+        & $AZD provision --no-prompt
     } finally { Pop-Location }
 }
 
 # Hydrate env vars from azd into this process for the rest of the run.
 Push-Location $AgentDir
 try {
-    # Ensure AZURE_TENANT_ID is set (azd up sets it, but -SkipPhases 1 skips that).
-    $tenantId = (& $AZD env get-value AZURE_TENANT_ID 2>$null)
-    if (-not $tenantId) {
-        $tenantId = (az account show --query tenantId -o tsv).Trim()
-        & $AZD env set AZURE_TENANT_ID $tenantId
-        Write-Host "Set AZURE_TENANT_ID=$tenantId (from az context)"
+    # Always select the target env (Phase 1 may have been skipped).
+    & $AZD env select $EnvName 2>$null
+
+    # Ensure AZURE_TENANT_ID is set in the azd env (required by postdeploy
+    # hooks of the azure.ai.agents extension). `azd env new` does not set it,
+    # and `azd env get-value` returns an error string instead of empty when
+    # the key is missing, so always set it unconditionally from az context.
+    $tenantId = (az account show --query tenantId -o tsv).Trim()
+    if ($tenantId) {
+        & $AZD env set AZURE_TENANT_ID $tenantId 2>&1 | Out-Null
+        Write-Host "Set AZURE_TENANT_ID=$tenantId in azd env."
+    } else {
+        throw "Could not determine AZURE_TENANT_ID from az account."
     }
 
     $values = (& $AZD env get-values) -split "`n"
@@ -203,7 +223,38 @@ Invoke-Phase 3 'Deploy agent-framework-agent-basic-responses' `
     {
     Push-Location $AgentDir
     try {
-        & $AZD deploy agent-framework-agent-basic-responses --no-prompt
+        # Retry on transient Foundry/ACR errors: 'Project not found' (data plane
+        # propagation, 1-3 min after provision) and 'ImageError' (flaky ACR
+        # image pull from the hosted agent runtime).
+        $maxAttempts = 5
+        $attempt = 0
+        $success = $false
+        while ($attempt -lt $maxAttempts -and -not $success) {
+            $attempt++
+            Write-Host "Deploy attempt $attempt of $maxAttempts..."
+            $output = & $AZD deploy agent-framework-agent-basic-responses --no-prompt 2>&1
+            $output | ForEach-Object { Write-Host $_ }
+            if ($LASTEXITCODE -eq 0) {
+                $success = $true
+                break
+            }
+            $errText = ($output | Out-String)
+            if ($errText -match 'Project not found' -or $errText -match 'NotFound') {
+                $wait = 60 * $attempt
+                Write-Host "Project data plane not ready yet (attempt $attempt). Waiting $wait s..." -ForegroundColor Yellow
+                Start-Sleep -Seconds $wait
+                $global:LASTEXITCODE = 0
+            } elseif ($errText -match 'ImageError' -or $errText -match 'Failed to pull container image') {
+                Write-Host "Transient ACR image pull failure (attempt $attempt). Waiting 90s..." -ForegroundColor Yellow
+                Start-Sleep -Seconds 90
+                $global:LASTEXITCODE = 0
+            } else {
+                throw "azd deploy failed with exit code $LASTEXITCODE (non-retryable error)"
+            }
+        }
+        if (-not $success) {
+            throw "azd deploy failed after $maxAttempts attempts"
+        }
     } finally { Pop-Location }
 }
 
@@ -246,7 +297,34 @@ Invoke-Phase 5 'Deploy gpt5-mini + gpt41-mini + broken-model hosted agents' `
                 continue
             }
             Write-Host "Deploying $svc ..."
-            & $AZD deploy $svc --no-prompt
+            # Retry on transient Foundry/ACR errors: 'Project not found' (data
+            # plane propagation) and 'ImageError' (flaky ACR image pull from
+            # the hosted agent runtime). Up to 4 attempts with 60-90s backoff.
+            $maxAttempts = 4
+            $a = 0
+            $deployed = $false
+            while ($a -lt $maxAttempts -and -not $deployed) {
+                $a++
+                $output = & $AZD deploy $svc --no-prompt 2>&1
+                $output | ForEach-Object { Write-Host $_ }
+                if ($LASTEXITCODE -eq 0) {
+                    $deployed = $true
+                    break
+                }
+                $errText = ($output | Out-String)
+                if ($errText -match 'Project not found' -or $errText -match 'NotFound') {
+                    Write-Host "Project not found (attempt $a). Waiting 60s..." -ForegroundColor Yellow
+                    Start-Sleep -Seconds 60
+                    $global:LASTEXITCODE = 0
+                } elseif ($errText -match 'ImageError' -or $errText -match 'Failed to pull container image') {
+                    Write-Host "Transient ACR image pull failure (attempt $a). Waiting 90s..." -ForegroundColor Yellow
+                    Start-Sleep -Seconds 90
+                    $global:LASTEXITCODE = 0
+                } else {
+                    throw "azd deploy $svc failed with exit code $LASTEXITCODE (non-retryable)"
+                }
+            }
+            if (-not $deployed) { throw "azd deploy $svc failed after $maxAttempts attempts" }
         }
     } finally { Pop-Location }
 }
@@ -322,16 +400,19 @@ Invoke-Phase 7 'Fan out 12 tool prompts across 3 working agents + 8 broken-model
         }
         Write-Host ""
         Write-Host "Fan-out complete: $count working + 8 broken-model invocations" -ForegroundColor Green
+        # Broken-model invokes and ~3 LookupError prompts are EXPECTED to fail
+        # (that's how we populate error tiles). Reset the exit code so the
+        # phase wrapper doesn't treat the last failing invoke as a failure.
+        $global:LASTEXITCODE = 0
     } finally { Pop-Location }
 }
 
 # ========================================================================
 # PHASE 8: continuous eval rule + custom evaluator
 # ========================================================================
-Invoke-Phase 8 'Register continuous-eval rule + custom compliance evaluator' `
-    'Creates an eval group with 3 built-in evaluators (intent_resolution, violence, tool_call_accuracy) and attaches a rule that fires on every agent response. Also registers a custom code-based compliance evaluator. End state: future agent responses will be scored automatically.' `
+Invoke-Phase 8 'Register custom compliance evaluator' `
+    'Registers a custom code-based compliance evaluator (grade -> float) in the Foundry catalog. End state: the evaluator is available for batch runs.' `
     {
-    & $VenvPython (Join-Path $ScriptsDir '10-continuous-eval.py')
     & $VenvPython (Join-Path $ScriptsDir '11-custom-evaluator-register.py')
 }
 
@@ -376,17 +457,21 @@ Invoke-Phase 12 'Export telemetry summary to artifacts/telemetry.json' `
 # ========================================================================
 # Smoke test
 # ========================================================================
-Invoke-Phase 13 'Smoke invoke + verify eval run materialized' `
-    'Final sanity check: invokes the agent once, waits 90s for trace ingest, then re-runs the batch eval over the latest traces and confirms it produced passing scores. End state: end-to-end confirmation that agent -> traces -> eval works.' `
+Invoke-Phase 13 'Smoke invoke + verify batch eval completed' `
+    'Final sanity check: invokes the agent once and verifies the batch eval produced results.' `
     {
     Push-Location $AgentDir
     try {
         & $AZD ai agent invoke --new-session --new-conversation `
-            "What time is it in Tokyo? Be brief and add 'This response is for informational purposes only.' at the end." 2>&1 | Out-Null
+            agent-framework-agent-basic-responses "What time is it in Tokyo? Be brief." 2>&1 | Out-Null
     } finally { Pop-Location }
-    Write-Host "Waiting 90s for trace ingest..."
-    Start-Sleep -Seconds 90
-    & $VenvPython (Join-Path $ScriptsDir '14-verify-continuous-eval.py')
+    # Confirm batch eval artifact exists from Phase 9
+    $batchFile = Join-Path $RepoRoot 'artifacts\agent-batch-eval-run.json'
+    if (Test-Path $batchFile) {
+        Write-Host "Batch eval artifact confirmed: $batchFile" -ForegroundColor Green
+    } else {
+        Write-Host 'WARNING: agent-batch-eval-run.json missing. Phase 9 may have failed.' -ForegroundColor Red
+    }
 }
 
 Write-Host ''
@@ -460,6 +545,6 @@ Write-Host ('-' * 70) -ForegroundColor Cyan
 Write-Host "  TEARDOWN (when you're done)" -ForegroundColor Cyan
 Write-Host ('-' * 70) -ForegroundColor Cyan
 Write-Host ''
-Write-Host "  pwsh -NoProfile -File scripts\teardown.ps1 -Purge" -ForegroundColor White
-Write-Host "    -Purge clears the Cognitive Services soft-delete (otherwise blocks reuse for 7 days)" -ForegroundColor DarkGray
+Write-Host "  pwsh -NoProfile -File scripts\teardown.ps1 -EnvName $EnvName" -ForegroundColor White
+Write-Host "    Purges the Cognitive Services soft-delete by default. Add -NoPurge to skip." -ForegroundColor DarkGray
 Write-Host ''

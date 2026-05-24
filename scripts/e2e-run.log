@@ -1,0 +1,449 @@
+# End-to-end run
+
+Command used to kick off this run:
+
+```powershell
+pwsh -NoProfile -File scripts\run-e2e.ps1 `
+  -EnvName aiobs3-foundry `
+  -Region eastus2 `
+  -SubscriptionId <subscription-id>
+```
+
+---
+
+Pre-flight checks:
+  [OK] Python venv (Python 3.13.13)
+  [OK] Agent dir
+  [OK] azd azd version 1.25.1 (commit b07e6397b31955d1d83378e28ece02a7915c4375) (stable)
+  [OK] az CLI 2.86.0
+  [OK] Docker 29.4.3
+  [OK] Logged in: <subscription-name> (<subscription-id>)
+
+All pre-flight checks passed.
+
+Repo:    C:\Users\<user>\Desktop\squad-test\agent-observability
+Region:  eastus2
+EnvName: aiobs3-foundry
+Logs:    C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\e2e-20260523-232502
+
+======================================================================
+PHASE 1: Provision infrastructure (azd provision)
+======================================================================
+  Goal: Creates the Azure resource group + all infrastructure: Foundry account, project, ACR, App Insights, Log Analytics, model deployment. Does NOT deploy agents (Phases 3 and 5 do that; Foundry auto-creates the project agentIdentity on first agent deploy).
+  Log: C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\e2e-20260523-232502\phase-01.log
+
+Set new environment 'aiobs3-foundry' as default environment? (y/N)
+New env 'aiobs3-foundry' created, default environment remains 'aiobs-foundry'
+
+Provisioning Azure resources (azd provision)
+Provisioning Azure resources can take some time.
+
+Initialize bicep provider
+Reading subscription and location from environment...
+Subscription: <subscription-name> (<subscription-id>)
+Location: East US 2
+
+Creating a deployment plan
+Comparing deployment state
+Validating deployment
+Creating/Updating resources
+  You can view detailed progress in the Azure Portal:
+  https://portal.azure.com/#view/HubsExtension/DeploymentDetailsBlade/~/overview/id/%2Fsubscriptions%2F<subscription-id>%2Fproviders%2FMicrosoft.Resources%2Fdeployments%2Faiobs3-foundry-<deployment-stamp>
+
+  (Done) Resource group: rg-aiobs3-foundry (2.079s)
+  (Done) Foundry project: ai-account-<token>/ai-project-aiobs3-foundry (34.811s)
+  (Done) Azure AI Services Model Deployment: ai-account-<token>/gpt-4o-mini (28.154s)
+  (Done) Foundry: ai-account-<token> (25.232s)
+  (Done) Log Analytics workspace: logs-<token> (21.524s)
+  (Done) Application Insights: appi-<token> (3.25s)
+  (Done) Foundry project connection: ai-account-<token>/ai-project-aiobs3-foundry/appi-<token> (15.548s)
+  (Done) Container Registry: cr<token> (17.764s)
+
+SUCCESS: Your application was provisioned in Azure in 2 minutes 26 seconds.
+You can view the resources created under the resource group rg-aiobs3-foundry in Azure Portal:
+https://portal.azure.com/#@/resource/subscriptions/<subscription-id>/resourceGroups/rg-aiobs3-foundry/overview
+
+Resource group: rg-aiobs3-foundry
+Foundry acct:   ai-account-<token>
+
+======================================================================
+PHASE 2: Grant Foundry User to project MI
+======================================================================
+  Goal: Assigns the Foundry User RBAC role to the project managed identity so it can call evaluation, taxonomy, and red-team APIs. Without this, eval and red-team scripts get 403 errors.
+  Log: C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\e2e-20260523-232502\phase-02.log
+
+Project MI principalId: <project-mi-principal-id>
+Project scope:           /subscriptions/<subscription-id>/resourceGroups/rg-aiobs3-foundry/providers/Microsoft.CognitiveServices/accounts/ai-account-<token>/projects/ai-project-aiobs3-foundry
+{
+  "id": "/subscriptions/<subscription-id>/resourceGroups/rg-aiobs3-foundry/providers/Microsoft.CognitiveServices/accounts/ai-account-<token>/projects/ai-project-aiobs3-foundry/providers/Microsoft.Authorization/roleAssignments/<role-assignment-id>",
+  "name": "<role-assignment-id>",
+  "principalId": "<project-mi-principal-id>",
+  "principalType": "ServicePrincipal",
+  "resourceGroup": "rg-aiobs3-foundry",
+  "roleDefinitionId": "/subscriptions/<subscription-id>/providers/Microsoft.Authorization/roleDefinitions/53ca6127-db72-4b80-b1b0-d745d6d5456d",
+  "type": "Microsoft.Authorization/roleAssignments"
+}
+Assigned Foundry User.
+PROJECT_MI_PRINCIPAL_ID stored in azd env.
+
+======================================================================
+PHASE 3: Deploy agent-framework-agent-basic-responses
+======================================================================
+  Goal: Builds the Docker container for the primary agent (with 6 @tool functions) and publishes it to ACR. End state: one Foundry-hosted agent active and ready to invoke.
+  Log: C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\e2e-20260523-232502\phase-03.log
+
+Deploy attempt 1 of 5...
+
+Deploying services (azd deploy)
+
+  agent-framework-agent-basic-responses: Packaging
+  agent-framework-agent-basic-responses: Packaging (Packaging container)
+  agent-framework-agent-basic-responses: Publishing
+  agent-framework-agent-basic-responses: Publishing (Publishing container) [7s]
+  agent-framework-agent-basic-responses: Deploying [2m8s]
+  agent-framework-agent-basic-responses: Deploying (Deploying hosted agent) [2m8s]
+  agent-framework-agent-basic-responses: Deploying (Creating agent) [2m8s]
+  agent-framework-agent-basic-responses: Deploying (Waiting for agent to become active) [2m12s]
+  agent-framework-agent-basic-responses: Deploying (Registering agent environment variables) [3m15s]
+  agent-framework-agent-basic-responses: Done [3m15s]
+- Agent playground (portal): https://ai.azure.com/nextgen/r/<foundry-account-fingerprint>,rg-aiobs3-foundry,,ai-account-<token>,ai-project-aiobs3-foundry/build/agents/agent-framework-agent-basic-responses/build?version=1
+- Agent endpoint (responses): https://ai-account-<token>.services.ai.azure.com/api/projects/ai-project-aiobs3-foundry/agents/agent-framework-agent-basic-responses/endpoint/protocols/openai/responses?api-version=2025-11-15-preview
+
+SUCCESS: Your application was deployed to Azure in 3 minutes 38 seconds.
+You can view the resources created under the resource group rg-aiobs3-foundry in Azure Portal:
+https://portal.azure.com/#@/resource/subscriptions/<subscription-id>/resourceGroups/rg-aiobs3-foundry/overview
+
+======================================================================
+PHASE 4: Create gpt-5-mini + gpt-4.1-mini deployments on the Foundry account
+======================================================================
+  Goal: Creates additional model deployments on the same Foundry account so multiple agents can use different models. End state: 3 model deployments visible in the portal.
+  Log: C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\e2e-20260523-232502\phase-04.log
+
+Name          ResourceGroup
+------------  -----------------
+gpt-4o-mini   rg-aiobs3-foundry
+gpt-5-mini    rg-aiobs3-foundry
+gpt-4.1-mini  rg-aiobs3-foundry
+
+======================================================================
+PHASE 5: Deploy gpt5-mini + gpt41-mini + broken-model hosted agents
+======================================================================
+  Goal: Deploys 3 sister agents: gpt5-mini, gpt41-mini (both functional), and broken-model (intentionally points at a non-existent model to generate error spans). End state: 4 agents total, dashboard tiles will light up with multi-model breakdowns.
+  Log: C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\e2e-20260523-232502\phase-05.log
+
+Deploying agent-framework-agent-gpt5-mini ...
+
+Deploying services (azd deploy)
+
+  agent-framework-agent-gpt5-mini: Packaging
+  agent-framework-agent-gpt5-mini: Packaging (Packaging container)
+  agent-framework-agent-gpt5-mini: Publishing
+  agent-framework-agent-gpt5-mini: Publishing (Publishing container) [7s]
+  agent-framework-agent-gpt5-mini: Deploying [2m4s]
+  agent-framework-agent-gpt5-mini: Deploying (Deploying hosted agent) [2m4s]
+  agent-framework-agent-gpt5-mini: Deploying (Creating agent) [2m4s]
+  agent-framework-agent-gpt5-mini: Deploying (Waiting for agent to become active) [2m13s]
+  agent-framework-agent-gpt5-mini: Deploying (Registering agent environment variables) [3m16s]
+  agent-framework-agent-gpt5-mini: Done [3m16s]
+
+SUCCESS: Your application was deployed to Azure in 3 minutes 39 seconds.
+
+Deploying agent-framework-agent-gpt41-mini ...
+
+Deploying services (azd deploy)
+
+  agent-framework-agent-gpt41-mini: Packaging
+  agent-framework-agent-gpt41-mini: Packaging (Packaging container)
+  agent-framework-agent-gpt41-mini: Publishing
+  agent-framework-agent-gpt41-mini: Publishing (Publishing container) [6s]
+  agent-framework-agent-gpt41-mini: Deploying [2m13s]
+  agent-framework-agent-gpt41-mini: Deploying (Deploying hosted agent) [2m13s]
+  agent-framework-agent-gpt41-mini: Deploying (Creating agent) [2m13s]
+  agent-framework-agent-gpt41-mini: Deploying (Waiting for agent to become active) [2m21s]
+  agent-framework-agent-gpt41-mini: Deploying (Registering agent environment variables) [3m24s]
+  agent-framework-agent-gpt41-mini: Done [3m24s]
+
+SUCCESS: Your application was deployed to Azure in 3 minutes 49 seconds.
+
+Deploying agent-framework-agent-broken-model ...
+
+Deploying services (azd deploy)
+
+  agent-framework-agent-broken-model: Packaging
+  agent-framework-agent-broken-model: Packaging (Packaging container)
+  agent-framework-agent-broken-model: Publishing
+  agent-framework-agent-broken-model: Publishing (Publishing container) [7s]
+  agent-framework-agent-broken-model: Deploying [2m12s]
+  agent-framework-agent-broken-model: Deploying (Deploying hosted agent) [2m12s]
+  agent-framework-agent-broken-model: Deploying (Creating agent) [2m12s]
+  agent-framework-agent-broken-model: Deploying (Waiting for agent to become active) [2m21s]
+  agent-framework-agent-broken-model: Deploying (Registering agent environment variables) [3m24s]
+  agent-framework-agent-broken-model: Done [3m24s]
+
+SUCCESS: Your application was deployed to Azure in 3 minutes 53 seconds.
+
+======================================================================
+PHASE 6: Warmup + seed 48-prompt corpus
+======================================================================
+  Goal: Pings the agent 3 times to defeat scale-to-zero, then sends a curated prompt corpus to generate baseline telemetry. End state: invoke_agent spans visible in App Insights Logs within ~5 min.
+  Log: C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\e2e-20260523-232502\phase-06.log
+
+Warmup ping 1/3
+Warmup ping 2/3
+Warmup ping 3/3
+Agent warm.
+
+Seeding 10 prompts (output goes to artifacts/seed-*.log)...
+To monitor progress in another terminal:
+  Get-ChildItem "C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\seed-*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Get-Content -Wait
+
+Seed complete: 10 prompts sent. Log: C:\Users\<user>\Desktop\squad-test\agent-observability\scripts\..\artifacts\seed-20260523-235018.log
+
+======================================================================
+PHASE 7: Fan out 12 tool prompts across 3 working agents + 8 broken-model invokes
+======================================================================
+  Goal: Drives diverse traffic across all 4 agents: 12 tool-using prompts per working agent (36 total, ~3 raise LookupError to populate tool error tiles) plus 8 invokes against broken-model (all fail, populate chat-level error charts). End state: Agents pane shows per-tool, per-model, and error breakdowns.
+  Log: C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\e2e-20260523-232502\phase-07.log
+
+
+[agent-framework-agent-basic-responses] sending 12 prompts
+  [ 1/36]  24s  List orders for customer C001.
+  [ 2/36]  22s  List orders for customer C002.
+  [ 3/36]  21s  List orders for customer C999.
+  [ 4/36]  22s  Find suppliers for request 1001.
+  [ 5/36]  26s  Find suppliers for request 1002.
+  [ 6/36]  22s  Find suppliers for request 42.
+  [ 7/36]  24s  Tell me about supplier S-77.
+  [ 8/36]  23s  Tell me about supplier S-91.
+  [ 9/36]  24s  Tell me about supplier S-XYZ.
+  [10/36]  25s  What time is it in UTC?
+  [11/36]  24s  Weather in Seattle?
+  [12/36]   5s  Roll a 20-sided die.
+
+[agent-framework-agent-gpt5-mini] sending 12 prompts
+  [13/36]   4s  List orders for customer C001.
+  [14/36]   6s  List orders for customer C002.
+  [15/36]   6s  List orders for customer C999.
+  [16/36]   4s  Find suppliers for request 1001.
+  [17/36]   5s  Find suppliers for request 1002.
+  [18/36]   4s  Find suppliers for request 42.
+  [19/36]   4s  Tell me about supplier S-77.
+  [20/36]   5s  Tell me about supplier S-91.
+  [21/36]   4s  Tell me about supplier S-XYZ.
+  [22/36]   4s  What time is it in UTC?
+  [23/36]   7s  Weather in Seattle?
+  [24/36]   4s  Roll a 20-sided die.
+
+[agent-framework-agent-gpt41-mini] sending 12 prompts
+  [25/36]   5s  List orders for customer C001.
+  [26/36]   5s  List orders for customer C002.
+  [27/36]   5s  List orders for customer C999.
+  [28/36]   4s  Find suppliers for request 1001.
+  [29/36]   4s  Find suppliers for request 1002.
+  [30/36]   4s  Find suppliers for request 42.
+  [31/36]   4s  Tell me about supplier S-77.
+  [32/36]   4s  Tell me about supplier S-91.
+  [33/36]   4s  Tell me about supplier S-XYZ.
+  [34/36]   4s  What time is it in UTC?
+  [35/36]   4s  Weather in Seattle?
+  [36/36]   4s  Roll a 20-sided die.
+
+[broken-model] driving 8 invokes (expected to error)
+  [1/8]   4s  ping 1
+  [2/8]   4s  ping 2
+  [3/8]   4s  ping 3
+  [4/8]   5s  ping 4
+  [5/8]   4s  ping 5
+  [6/8]   4s  ping 6
+  [7/8]   4s  ping 7
+  [8/8]   5s  ping 8
+
+Fan-out complete: 36 working + 8 broken-model invocations
+
+======================================================================
+PHASE 8: Register custom compliance evaluator
+======================================================================
+  Goal: Registers a custom code-based compliance evaluator (grade -> float) in the Foundry catalog. End state: the evaluator is available for batch runs.
+  Log: C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\e2e-20260524-000148\phase-08.log
+
+endpoint:  https://ai-account-<token>.services.ai.azure.com/api/projects/ai-project-aiobs3-foundry
+smoke pass: {'compliance_pass': 1.0, 'compliance_pass_label': 'pass', 'compliance_reason': 'Required disclaimer phrase present.'}
+smoke fail: {'compliance_pass': 0.0, 'compliance_pass_label': 'fail', 'compliance_reason': "Missing required phrase: 'this response is for informational purposes only.'."}
+registered: name=ComplianceCheck version=1 id=azureai://accounts/ai-account-<token>/projects/ai-project-aiobs3-foundry/evaluators/ComplianceCheck/versions/1
+saved:     C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\custom-evaluator.json
+
+======================================================================
+PHASE 9: Run agent batch eval over App Insights traces (5 evaluators)
+======================================================================
+  Goal: Creates an eval group with 5 built-in evaluators (intent_resolution, task_adherence, coherence, fluency, relevance) and runs them over the last 2h of agent traces in App Insights (max 20 traces). End state: eval run completes in 1-3 min and appears in the Foundry portal Evaluations pane immediately.
+  Log: C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\e2e-20260524-000148\phase-09.log
+
+agent:        agent-framework-agent-basic-responses
+deployment:   gpt-4o-mini
+evaluators:   intent_resolution, task_adherence, coherence, fluency, relevance
+data source:  azure_ai_traces_preview (lookback 2h, max 20 traces)
+
+eval id: <eval-id-traces>
+run id: <run-id-traces>, status: in_progress
+  status: completed
+
+final: status=completed total=20 passed=17 failed=3 errored=0
+report:    https://ai.azure.com/nextgen/r/<foundry-account-fingerprint>,rg-aiobs3-foundry,,ai-account-<token>,ai-project-aiobs3-foundry/build/evaluations/<eval-id-traces>/run/<run-id-traces>
+
+Saved artifacts/agent-batch-eval-run.json
+
+======================================================================
+PHASE 10: Run red-team scan
+======================================================================
+  Goal: Launches a Foundry-managed adversarial scan with 2 attack strategies (Flip, Base64) and 3 safety evaluators (prohibited_actions, task_adherence, sensitive_data_leakage) against a temporary prompt agent. End state: per-prompt safety verdicts saved to artifacts/redteam-run-final.json.
+  Log: C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\e2e-20260524-000148\phase-10.log
+
+C:\Users\<user>\Desktop\squad-test\agent-observability\.venv\Lib\site-packages\pydantic\main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `literal['jsonl']` - serialized value may not be as expected [field_name='type', input_value='azure_ai_red_team', input_type=str])
+  PydanticSerializationUnexpectedValue(Expected `CreateEvalCompletionsRunDataSource` - serialized value may not be as expected [field_name='data_source', input_value=CreateEvalJSONLRunDataSou...en number of sides.'}]}), input_type=CreateEvalJSONLRunDataSource])
+  PydanticSerializationUnexpectedValue(Expected `DataSourceResponses` - serialized value may not be as expected [field_name='data_source', input_value=CreateEvalJSONLRunDataSou...en number of sides.'}]}), input_type=CreateEvalJSONLRunDataSource])
+  return self.__pydantic_serializer__.to_python(
+endpoint:    https://ai-account-<token>.services.ai.azure.com/api/projects/ai-project-aiobs3-foundry
+model deploy: gpt-4o-mini
+Creating temporary prompt agent 'redteam-prompt-agent'...
+target:      redteam-prompt-agent:1
+tools:       6 tool descriptions
+eval_id:     <eval-id-redteam>
+taxonomy_id: azureai://accounts/ai-account-<token>/projects/ai-project-aiobs3-foundry/evaluationtaxonomies/redteam-prompt-agent/versions/1.0
+run_id:      <run-id-redteam> status=in_progress
+status:      completed
+final:       completed
+results:     total=204 passed=142 failed=62 errored=0
+output items: 204 -> C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\redteam_eval_output_items_redteam-prompt-agent.json
+Deleting temporary prompt agent 'redteam-prompt-agent'...
+deleted.
+
+======================================================================
+PHASE 11: Create silent action group + 2 scheduled-query alerts
+======================================================================
+  Goal: Creates a silent action group (no receivers, just for routing) and two Azure Monitor scheduled-query rules: one for error count (sev 2) and one for p95 latency > 30s (sev 3), both over 15-min windows. End state: alerts will fire automatically if production degrades.
+  Log: C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\e2e-20260524-000148\phase-11.log
+
+Action group not found, creating ag-aiobs-silent...
+appi_id: /subscriptions/<subscription-id>/resourceGroups/rg-aiobs3-foundry/providers/Microsoft.Insights/components/appi-<token>
+ag_id:   /subscriptions/<subscription-id>/resourceGroups/rg-aiobs3-foundry/providers/microsoft.insights/actionGroups/ag-aiobs-silent
+
+creating alert-gen-ai-errors-15m (sev=2)
+  -> {'id': '/subscriptions/<subscription-id>/resourceGroups/rg-aiobs3-foundry/providers/microsoft.insights/scheduledqueryrules/alert-gen-ai-errors-15m', 'provisioningState': None}
+
+creating alert-gen-ai-p95-latency-15m (sev=3)
+  -> {'id': '/subscriptions/<subscription-id>/resourceGroups/rg-aiobs3-foundry/providers/microsoft.insights/scheduledqueryrules/alert-gen-ai-p95-latency-15m', 'provisioningState': None}
+
+total rules in RG: 2
+  - alert-gen-ai-errors-15m sev=2 enabled=True actions=['ag-aiobs-silent']
+  - alert-gen-ai-p95-latency-15m sev=3 enabled=True actions=['ag-aiobs-silent']
+
+======================================================================
+PHASE 12: Export telemetry summary to artifacts/telemetry.json
+======================================================================
+  Goal: Runs 4 KQL queries against Log Analytics (volume + success rate, latency percentiles, session activity, token usage) and saves results. End state: artifacts/telemetry.json contains operational baseline. Returns empty if traffic has not yet been ingested (5-15 min ingest delay).
+  Log: C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\e2e-20260524-000148\phase-12.log
+
+workspace_id:  <workspace-id>
+appi_resource_id: /subscriptions/<subscription-id>/resourceGroups/rg-aiobs3-foundry/providers/Microsoft.Insights/components/appi-<token>
+
+=== tc-050-volume-success ===
+[]
+
+=== tc-051-latency-percentiles-ms ===
+[
+  {
+    "n": 0,
+    "p50_ms": null,
+    "p90_ms": null,
+    "p95_ms": null,
+    "p99_ms": null,
+    "avg_ms": "NaN",
+    "max_ms": null
+  }
+]
+
+=== tc-052-by-prompt-category ===
+[]
+
+=== tc-053-token-usage ===
+[
+  {
+    "n": 0,
+    "with_token_attrs": 0,
+    "sum_input": 0,
+    "sum_output": 0,
+    "avg_input": "NaN",
+    "avg_output": "NaN"
+  }
+]
+
+saved:  C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\telemetry.json
+
+======================================================================
+PHASE 13: Smoke invoke + verify batch eval completed
+======================================================================
+  Goal: Final sanity check: invokes the agent once and verifies the batch eval produced results.
+  Log: C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\e2e-20260524-000148\phase-13.log
+
+Batch eval artifact confirmed: C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\agent-batch-eval-run.json
+
+======================================================================
+E2E COMPLETE
+======================================================================
+
+  Logs:           C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\e2e-20260524-000148
+  Resource group: rg-aiobs3-foundry
+  Env:            aiobs3-foundry
+
+----------------------------------------------------------------------
+  NEXT STEPS: how to view what was deployed
+----------------------------------------------------------------------
+
+1. Validate the deployment (recommended first step)
+   Runs 25+ checks across infrastructure, agents, eval, alerts, RBAC.
+     pwsh -NoProfile -File scripts\validate-deployment.ps1
+
+2. View the App Insights Agents pane (built-in dashboard)
+   Wait 15-30 min after deployment for telemetry rollup, then open:
+     https://portal.azure.com/#@/resource/subscriptions/<subscription-id>/resourceGroups/rg-aiobs3-foundry/providers/microsoft.insights/components/appi-<token>/agents
+
+   Expected tiles: Agent Runs, Gen AI Errors, Tool Calls, Models, Token Consumption, Evaluations
+
+3. Import the Grafana dashboard (5 custom panels)
+   App Insights > Dashboards with Grafana > New > Import the JSON:
+     C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\grafana\agent-observability-custom-dashboard.json
+
+4. Invoke an agent manually to see traces live
+   cd agent
+   azd ai agent invoke --new-session --new-conversation "List orders for customer C001."
+
+5. Check telemetry summary (KQL queries against Log Analytics)
+     Get-Content C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\telemetry.json
+
+6. Inspect red-team results
+     Get-Content C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\redteam-run-final.json
+
+7. Browse all created resources in the portal
+     https://portal.azure.com/#@/resource/subscriptions/<subscription-id>/resourceGroups/rg-aiobs3-foundry
+
+----------------------------------------------------------------------
+  TROUBLESHOOTING (if something looks empty or wrong)
+----------------------------------------------------------------------
+
+  Telemetry empty after 30 min?
+    pwsh -NoProfile -File scripts\17-list-connections.py    # check App Insights wiring
+
+  Eval pane shows no runs?
+    & .venv\Scripts\python.exe scripts\18-trigger-eval-runs.py    # post stored responses
+    & .venv\Scripts\python.exe scripts\15-list-eval-rules.py      # dump rule definitions
+
+  Want to inspect phase logs from this run?
+    Get-ChildItem C:\Users\<user>\Desktop\squad-test\agent-observability\artifacts\e2e-20260524-000148
+
+----------------------------------------------------------------------
+  TEARDOWN (when you're done)
+----------------------------------------------------------------------
+
+  pwsh -NoProfile -File scripts\teardown.ps1 -EnvName aiobs3-foundry
+    Purges the Cognitive Services soft-delete by default. Add -NoPurge to skip.

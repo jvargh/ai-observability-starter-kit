@@ -1,13 +1,6 @@
 {
-  "eval_id": "eval_0cd8935a5aa34d30b7ebae3fb3a86aeb",
+  "eval_id": "eval_098c888c716740b4aa24e1418d88f672",
   "rule_id": "demo-continuous-eval",
-  "run_count": 1,
-  "runs": [
-    {
-      "id": "evalrun_28a520c9e6fc486081c2ac13b33cdcf9",
-      "status": "completed",
-      "created_at": 1779496631,
-      "name": "demo-traces-batch-1779496629"
-    }
-  ]
+  "run_count": 0,
+  "runs": []
 }

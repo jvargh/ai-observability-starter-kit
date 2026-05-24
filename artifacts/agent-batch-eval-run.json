@@ -1,11 +1,11 @@
 {
-  "eval_id": "eval_0e5cd8d30d8b4f8492f8f864264b7e2f",
-  "run_id": "evalrun_cb1e1ae01d1341b68b0d52e923047959",
+  "eval_id": "eval_64cdb512957d4ff7b14ab8aab5370528",
+  "run_id": "evalrun_42fbe96a988d4df1ae3380c6af42ffd4",
   "status": "completed",
   "result_counts": {
     "errored": 0,
-    "failed": 12,
-    "passed": 8,
+    "failed": 6,
+    "passed": 14,
     "total": 20,
     "skipped": 0
   },
@@ -18,15 +18,15 @@
       "skipped": 0
     },
     {
-      "failed": 12,
-      "passed": 8,
+      "failed": 6,
+      "passed": 14,
       "testing_criteria": "task_adherence",
       "errored": 0,
       "skipped": 0
     },
     {
-      "failed": 2,
-      "passed": 18,
+      "failed": 3,
+      "passed": 17,
       "testing_criteria": "coherence",
       "errored": 0,
       "skipped": 0
@@ -46,5 +46,5 @@
       "skipped": 0
     }
   ],
-  "report_url": "https://ai.azure.com/nextgen/r/RjqC1BiWQzKu62GO5aWqkw,rg-aiobs2-foundry,,ai-account-b5egolfzm3bew,ai-project-aiobs2-foundry/build/evaluations/eval_0e5cd8d30d8b4f8492f8f864264b7e2f/run/evalrun_cb1e1ae01d1341b68b0d52e923047959"
+  "report_url": "https://ai.azure.com/nextgen/r/RjqC1BiWQzKu62GO5aWqkw,rg-aiobs4-foundry,,ai-account-tdaqi635tnwua,ai-project-aiobs4-foundry/build/evaluations/eval_64cdb512957d4ff7b14ab8aab5370528/run/evalrun_42fbe96a988d4df1ae3380c6af42ffd4"
 }

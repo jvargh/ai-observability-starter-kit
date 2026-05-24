@@ -1,10 +1,10 @@
 {
   "alert-gen-ai-errors-15m": {
-    "id": "/subscriptions/463a82d4-1896-4332-aeeb-618ee5a5aa93/resourceGroups/rg-aiobs2-foundry/providers/microsoft.insights/scheduledqueryrules/alert-gen-ai-errors-15m",
+    "id": "/subscriptions/463a82d4-1896-4332-aeeb-618ee5a5aa93/resourceGroups/rg-aiobs3-foundry/providers/microsoft.insights/scheduledqueryrules/alert-gen-ai-errors-15m",
     "provisioningState": null
   },
   "alert-gen-ai-p95-latency-15m": {
-    "id": "/subscriptions/463a82d4-1896-4332-aeeb-618ee5a5aa93/resourceGroups/rg-aiobs2-foundry/providers/microsoft.insights/scheduledqueryrules/alert-gen-ai-p95-latency-15m",
+    "id": "/subscriptions/463a82d4-1896-4332-aeeb-618ee5a5aa93/resourceGroups/rg-aiobs3-foundry/providers/microsoft.insights/scheduledqueryrules/alert-gen-ai-p95-latency-15m",
     "provisioningState": null
   }
 }

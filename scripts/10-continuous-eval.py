@@ -52,7 +52,7 @@ def main() -> int:
     load_dotenv()
 
     endpoint = os.environ["AZURE_AI_PROJECT_ENDPOINT"]
-    model_deployment = os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
+    model_deployment = os.environ.get("AZURE_AI_MODEL_DEPLOYMENT_NAME") or os.environ["MODEL_DEPLOYMENT_NAME"]
     agent_name = os.environ.get(
         "AZURE_AI_AGENT_NAME", "agent-framework-agent-basic-responses"
     )

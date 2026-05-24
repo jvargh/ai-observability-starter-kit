@@ -1,0 +1,79 @@
+# Post-deployment validation
+
+Command used to run the validation:
+
+```powershell
+pwsh -NoProfile -File scripts\validate-deployment.ps1 -EnvName aiobs3-foundry
+```
+
+---
+Update available: 1.25.1 -> 1.25.2 (https://github.com/Azure/azure-dev/releases/tag/azure-dev-cli_1.25.2)
+To update, visit https://aka.ms/azd/upgrade/windows
+Update available: 1.25.1 -> 1.25.2 (https://github.com/Azure/azure-dev/releases/tag/azure-dev-cli_1.25.2)
+To update, visit https://aka.ms/azd/upgrade/windows
+
+=====================================================================
+  AI Observability Starter Kit: Post-Deployment Validation
+=====================================================================
+  Env:            aiobs3-foundry
+  Resource group: rg-aiobs3-foundry
+  Subscription:   <subscription-id>
+  Endpoint:       https://ai-account-<token>.services.ai.azure.com/api/projects/ai-project-aiobs3-foundry
+
+--- Infrastructure ---
+  [PASS] Resource group exists
+  [PASS] Cognitive Services account exists
+  [PASS] Foundry project exists
+  [PASS] Application Insights exists
+  [PASS] Log Analytics workspace exists
+  [PASS] Container Registry exists
+
+--- Model Deployments ---
+  [PASS] Model deployment: gpt-4o-mini
+  [PASS] Model deployment: gpt-5-mini
+  [PASS] Model deployment: gpt-4.1-mini
+
+--- Hosted Agents ---
+  [PASS] Agent: agent-framework-agent-basic-responses (status=active)
+  [PASS] Agent: agent-framework-agent-gpt5-mini (status=active)
+  [PASS] Agent: agent-framework-agent-gpt41-mini (status=active)
+  [PASS] Agent: agent-framework-agent-broken-model (status=active)
+
+--- Agent Invocation ---
+  [PASS] basic-responses agent responds
+  [PASS] Tool call succeeds (list orders C001)
+  [PASS] broken-model agent returns error span
+
+--- Telemetry ---
+  [PASS] invoke_agent spans in App Insights
+  [PASS] chat dependency spans exist
+  [PASS] execute_tool dependency spans exist
+
+--- Evaluation ---
+  [PASS] Batch eval artifact exists
+  [PASS] Custom evaluator registered
+  [PASS] Red-team results exist
+
+--- Alerts ---
+  [PASS] Action group: ag-aiobs-silent
+  [PASS] Alert: gen-ai-errors-15m
+  [PASS] Alert: gen-ai-p95-latency-15m
+
+--- RBAC ---
+  [PASS] Foundry User role assigned to project MI
+
+=====================================================================
+  VALIDATION SUMMARY
+=====================================================================
+  Passed:  26
+  Failed:  0
+  Skipped: 0
+
+  All checks passed. Deployment is fully functional.
+
+  Next steps:
+    App Insights Agents pane: Azure portal > rg rg-aiobs3-foundry > App Insights > Agents (Preview)
+    Grafana dashboard:        Import artifacts/grafana/agent-observability-dashboard.json
+    Teardown:                 pwsh -NoProfile -File scripts\teardown.ps1 -EnvName <env-name>
+
+

@@ -1,6 +1,6 @@
 {
-  "id": "evalrun_f5871603eb5840c397809fd77536c643",
-  "created_at": 1779505855,
+  "id": "evalrun_5ecfcb07f6c44f87a673478c378a6276",
+  "created_at": 1779597895,
   "data_source": {
     "source": null,
     "type": "azure_ai_red_team",
@@ -8,7 +8,7 @@
       "type": "red_team_taxonomy",
       "source": {
         "type": "file_id",
-        "id": "azureai://accounts/ai-account-b5egolfzm3bew/projects/ai-project-aiobs2-foundry/evaluationtaxonomies/redteam-prompt-agent/versions/1.0"
+        "id": "azureai://accounts/ai-account-tdaqi635tnwua/projects/ai-project-aiobs4-foundry/evaluationtaxonomies/redteam-prompt-agent/versions/1.0"
       },
       "attack_strategies": [
         "Flip",
@@ -54,10 +54,10 @@
     "correlation_id": null,
     "inner_error": null
   },
-  "eval_id": "eval_e76dd85b42884edd95b1db502a3b5fb3",
+  "eval_id": "eval_d9054dacbd6945edaa291bfb7efdb6df",
   "metadata": null,
   "model": null,
-  "name": "Red Team Agent Safety Eval Run 1779505853",
+  "name": "Red Team Agent Safety Eval Run 1779597893",
   "object": "eval.run",
   "per_model_usage": [],
   "per_testing_criteria_results": [],
@@ -69,10 +69,10 @@
     "total": 0
   },
   "status": "in_progress",
-  "modified_at": 1779505855,
+  "modified_at": 1779597895,
   "created_by": null,
   "properties": {
-    "eval_id": "eval_e76dd85b42884edd95b1db502a3b5fb3",
+    "eval_id": "eval_d9054dacbd6945edaa291bfb7efdb6df",
     "NetworkType": "Public"
   }
 }

@@ -157,7 +157,7 @@ This single orchestrator runs 13 phases, each logged to `artifacts/e2e-<timestam
 | 5 | Deploys 3 sister agents (gpt5-mini, gpt41-mini, broken-model) | ~9 min |
 | 6 | Warmup (3 pings) + seed traffic (48 prompts from clean, ambiguous, safety-bait corpora) | ~6 min |
 | 7 | Fan-out: 12 tool prompts x 3 working agents + 8 broken-model invokes | ~3 min |
-| 8 | Registers evaluation rule (3 evaluators) + custom compliance evaluator in the Foundry catalog | ~30 s |
+| 8 | Registers custom compliance evaluator in the Foundry catalog | ~30 s |
 | 9 | Batch eval: 8 agent evaluators over recent traces in App Insights | ~3 min |
 | 10 | Red-team scan (2 attack strategies, 3 safety evaluators, temporary prompt agent) | ~8 min |
 | 11 | Creates 2 scheduled-query alerts via ARM REST | ~10 s |
@@ -165,6 +165,8 @@ This single orchestrator runs 13 phases, each logged to `artifacts/e2e-<timestam
 | 13 | Smoke invoke + verify eval run completed | ~2 min |
 
 Total wall time: roughly 35 to 50 minutes. If a phase fails, the script stops and prints the log path. Skip phases you do not need with `-SkipPhases 9,10`.
+
+> **Reference run transcript:** A masked end-to-end log from a successful run is captured in [`scripts/e2e-run.log`](../scripts/e2e-run.log).
 
 ### Post-deployment validation
 
@@ -175,6 +177,8 @@ pwsh -NoProfile -File scripts\validate-deployment.ps1
 ```
 
 This checks 8 categories (24 checks total): infrastructure, model deployments, hosted agents, agent invocation, telemetry, evaluation, alerts, and RBAC. Each check prints `[PASS]`, `[FAIL]`, or `[SKIP]` with a summary at the end. Use `-SkipInvoke` to skip the agent call tests.
+
+> **Reference validation transcript:** A masked validation log from a successful run is captured in [`scripts/e2e-validation.log`](../scripts/e2e-validation.log).
 
 ### What a successful deployment looks like
 
@@ -476,3 +480,5 @@ For reference, here is the full layout of the starter kit:
 AI observability is not an add-on. It is a prerequisite for operating agentic systems with confidence. This starter kit makes that concrete: a working agent, instrumented telemetry, dashboards, continuous and batch evaluation, adversarial red-team testing, compliance checks, and alerting, all provisionable in a single command and tearable in another.
 
 Fork the repo, run `scripts/run-e2e.ps1`, and start building from a foundation that already does the hard part.
+
+**GitHub:** [github.com/jvargh/ai-observability-starter-kit](https://github.com/jvargh/ai-observability-starter-kit/)

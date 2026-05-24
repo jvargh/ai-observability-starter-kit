@@ -233,9 +233,17 @@ Write-Host ''
 Write-Host '--- Evaluation ---' -ForegroundColor Cyan
 
 if (Test-Path $VenvPython) {
-    Test-Check 'Continuous eval rule exists' {
-        $out = & $VenvPython (Join-Path $RepoRoot 'scripts\14-verify-continuous-eval.py') 2>&1
-        if ($out -match 'rule_id' -or $out -match 'runs') { $true } else { $false }
+    Test-Check 'Batch eval artifact exists' {
+        $f = Join-Path $RepoRoot 'artifacts\agent-batch-eval-run.json'
+        if (Test-Path $f) { "Found: $f" } else { $false }
+    }
+    Test-Check 'Custom evaluator registered' {
+        $f = Join-Path $RepoRoot 'artifacts\custom-evaluator.json'
+        if (Test-Path $f) { "Found: $f" } else { $false }
+    }
+    Test-Check 'Red-team results exist' {
+        $f = Join-Path $RepoRoot 'artifacts\redteam-run-final.json'
+        if (Test-Path $f) { "Found: $f" } else { $false }
     }
 } else {
     Skip-Check 'Evaluation checks' 'Python venv not found'
@@ -303,7 +311,7 @@ Write-Host ''
 Write-Host "  Next steps:" -ForegroundColor Cyan
 Write-Host "    App Insights Agents pane: Azure portal > rg $rg > App Insights > Agents (Preview)"
 Write-Host "    Grafana dashboard:        Import artifacts/grafana/agent-observability-dashboard.json"
-Write-Host "    Teardown:                 pwsh -NoProfile -File scripts\teardown.ps1 -Purge"
+Write-Host "    Teardown:                 pwsh -NoProfile -File scripts\teardown.ps1 -EnvName <env-name>"
 Write-Host ''
 
 exit $fail

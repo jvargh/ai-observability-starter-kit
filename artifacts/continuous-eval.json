@@ -1,5 +1,6 @@
 {
-  "eval_id": "eval_b9b97db02db944b08a261d8c21e99dc5",
+  "eval_id": "eval_098c888c716740b4aa24e1418d88f672",
   "rule_id": "demo-continuous-eval",
-  "agent_name": "agent-framework-agent-basic-responses"
+  "agent_name": "agent-framework-agent-basic-responses",
+  "model_deployment": "gpt-4o-mini"
 }

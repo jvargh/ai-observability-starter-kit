@@ -42,10 +42,10 @@
         "value": "${ENABLE_MONITORING=true}"
       },
       "enableHostedAgents": {
-        "value": "${ENABLE_HOSTED_AGENTS=false}"
+        "value": true
       },
       "enableCapabilityHost": {
-        "value": "${ENABLE_CAPABILITY_HOST=true}"
+        "value": false
       },
       "useExistingAiProject": {
         "value": "${USE_EXISTING_AI_PROJECT=false}"

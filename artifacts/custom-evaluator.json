@@ -1,5 +1,16 @@
 {
-  "catalog_id": "manifest:ComplianceCheck:1.0.0",
+  "catalog_id": "azureai://accounts/ai-account-tdaqi635tnwua/projects/ai-project-aiobs4-foundry/evaluators/ComplianceCheck/versions/1",
   "name": "ComplianceCheck",
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "smoke_pass": {
+    "compliance_pass": 1.0,
+    "compliance_pass_label": "pass",
+    "compliance_reason": "Required disclaimer phrase present."
+  },
+  "smoke_fail": {
+    "compliance_pass": 0.0,
+    "compliance_pass_label": "fail",
+    "compliance_reason": "Missing required phrase: 'this response is for informational purposes only.'."
+  },
+  "registration_error": null
 }

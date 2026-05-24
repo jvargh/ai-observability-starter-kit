@@ -69,10 +69,10 @@ The App Insights "Agents (preview)" pane rollup takes 15-30 min after spans land
 ## 3. Tear down
 
 ```powershell
-pwsh -NoProfile -File scripts\teardown.ps1 -Purge
+pwsh -NoProfile -File scripts\teardown.ps1 -EnvName <env-name>
 ```
 
-`-Purge` is mandatory if you plan to redeploy in the same region within 7 days (Cog Services soft-delete).
+Purge is the default behavior (clears Cognitive Services soft-delete so the account name can be reused). Add `-NoPurge` to skip.
 
 ## Common bailouts
 
