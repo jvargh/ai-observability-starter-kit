@@ -1,36 +1,36 @@
-# AI Observability Starter Kit: from deployed agent to production-grade monitoring
+# AI Observability Starter Kit for Microsoft Foundry agents
 
 > **TL;DR**: A single PowerShell command provisions a four-agent Microsoft Foundry environment with telemetry, eight built-in evaluators, a custom compliance evaluator, an automated red-team scan, and two scheduled-query alerts. Validated end to end (26 of 26 post-deploy checks pass) and torn down with one more command. Fork and run.
->
+> 
 > **Who this is for**: Application developers, ML engineers, and SREs running AI agents on Azure who want production-grade observability without writing the plumbing themselves.
 
 **Table of Contents**
 
-1. [From green dashboards to production-grade AI observability](#1-from-green-dashboards-to-production-grade-ai-observability)
-   - 1.1 [How it flows](#11-how-it-flows)
-   - 1.2 [Agent definition](#12-agent-definition)
-2. [Deploy and run](#2-deploy-and-run)
-   - 2.1 [What this starter kit contains](#21-what-this-starter-kit-contains)
-   - 2.2 [Running the kit](#22-running-the-kit)
-     - 2.2.1 [Post-deployment validation](#221-post-deployment-validation)
-     - 2.2.2 [What a successful deployment looks like](#222-what-a-successful-deployment-looks-like)
-     - 2.2.3 [Teardown](#223-teardown)
-     - 2.2.4 [Ad-hoc traffic and eval refresh](#224-ad-hoc-traffic-and-eval-refresh)
-3. [Evaluation: agent evaluators and custom checks](#3-evaluation-agent-evaluators-and-custom-checks)
-   - 3.1 [Two evaluation paths](#31-two-evaluation-paths)
-   - 3.2 [Agent evaluators](#32-agent-evaluators)
-   - 3.3 [Custom evaluator: compliance phrase check](#33-custom-evaluator-compliance-phrase-check)
-4. [Red-team testing: automated safety scanning](#4-red-team-testing-automated-safety-scanning)
-   - 4.1 [How the scan works](#41-how-the-scan-works)
-   - 4.2 [Results and interpretation](#42-results-and-interpretation)
-5. [Observability](#5-observability)
-   - 5.1 [Querying telemetry with KQL](#51-querying-telemetry-with-kql)
-   - 5.2 [Visualizing telemetry: three viewing surfaces](#52-visualizing-telemetry-three-viewing-surfaces)
-   - 5.3 [App Insights Agents pane](#53-app-insights-agents-pane)
-   - 5.4 [Prebuilt Grafana dashboards](#54-prebuilt-grafana-dashboards)
-   - 5.5 [Custom dashboards](#55-custom-dashboards)
-6. [Repository structure](#6-repository-structure)
-7. [Conclusion and next steps](#7-conclusion-and-next-steps)
+1.  [From green dashboards to production-grade AI observability](#1-from-green-dashboards-to-production-grade-ai-observability)
+    *   1.1 [How it flows](#11-how-it-flows)
+    *   1.2 [Agent definition](#12-agent-definition)
+2.  [Deploy and run](#2-deploy-and-run)
+    *   2.1 [What this starter kit contains](#21-what-this-starter-kit-contains)
+    *   2.2 [Running the kit](#22-running-the-kit)
+        *   2.2.1 [Post-deployment validation](#221-post-deployment-validation)
+        *   2.2.2 [What a successful deployment looks like](#222-what-a-successful-deployment-looks-like)
+        *   2.2.3 [Teardown](#223-teardown)
+        *   2.2.4 [Ad-hoc traffic and eval refresh](#224-ad-hoc-traffic-and-eval-refresh)
+3.  [Evaluation: agent evaluators and custom checks](#3-evaluation-agent-evaluators-and-custom-checks)
+    *   3.1 [Two evaluation paths](#31-two-evaluation-paths)
+    *   3.2 [Agent evaluators](#32-agent-evaluators)
+    *   3.3 [Custom evaluator: compliance phrase check](#33-custom-evaluator-compliance-phrase-check)
+4.  [Red-team testing: automated safety scanning](#4-red-team-testing-automated-safety-scanning)
+    *   4.1 [How the scan works](#41-how-the-scan-works)
+    *   4.2 [Results and interpretation](#42-results-and-interpretation)
+5.  [Observability](#5-observability)
+    *   5.1 [Querying telemetry with KQL](#51-querying-telemetry-with-kql)
+    *   5.2 [Visualizing telemetry: three viewing surfaces](#52-visualizing-telemetry-three-viewing-surfaces)
+    *   5.3 [App Insights Agents pane](#53-app-insights-agents-pane)
+    *   5.4 [Prebuilt Grafana dashboards](#54-prebuilt-grafana-dashboards)
+    *   5.5 [Custom dashboards](#55-custom-dashboards)
+6.  [Repository structure](#6-repository-structure)
+7.  [Conclusion and next steps](#7-conclusion-and-next-steps)
 
 ---
 
@@ -44,13 +44,13 @@ Your AI agent ran in production. The load balancer showed zero errors. Your Appl
 
 None of these failures show up in load balancer logs or a generic resource dashboard. They require a different kind of observability, one that stitches together five capabilities:
 
-* **Instrumented traces** using OpenTelemetry GenAI semantic conventions, so every model call and tool execution becomes a span you can query.
-* **Automated quality evaluators** that score reasoning, intent resolution, and tool usage on real traffic, not test fixtures.
-* **Adversarial red-team testing** that probes safety boundaries with generated attack prompts before real users do.
-* **Scheduled-query alerts** that fire on error rate and latency regression, not just uptime.
-* **Dashboards** that surface tokens, models, tools, and errors in one place for operators and on-call.
+*   **Instrumented traces** using OpenTelemetry GenAI semantic conventions, so every model call and tool execution becomes a span you can query.
+*   **Automated quality evaluators** that score reasoning, intent resolution, and tool usage on real traffic, not test fixtures.
+*   **Adversarial red-team testing** that probes safety boundaries with generated attack prompts before real users do.
+*   **Scheduled-query alerts** that fire on error rate and latency regression, not just uptime.
+*   **Dashboards** that surface tokens, models, tools, and errors in one place for operators and on-call.
 
-None of those pieces are new. The hard part is wiring them together correctly. This starter kit ships the wiring (an instrumented agent, evaluators bound to the right trace fields, a red-team taxonomy, an importable Grafana dashboard, and 26 post-deploy checks) in one command, so you start from a known-good baseline instead of assembling one.
+None of those pieces are new. The hard part is wiring them together correctly. This starter kit ([github.com/jvargh/ai-observability-starter-kit](https://github.com/jvargh/ai-observability-starter-kit/)) ships the wiring (an instrumented agent, evaluators bound to the right trace fields, a red-team taxonomy, an importable Grafana dashboard, and 26 post-deploy checks) in one command, so you start from a known-good baseline instead of assembling one.
 
 The rest of this section shows how the kit wires those pieces together. Sections 2 onward cover deployment, evaluation, red-teaming, observability surfaces, and teardown.
 
@@ -70,7 +70,7 @@ The key design point: the agent itself does not know about dashboards, evaluator
 
 ### 1.2 Agent definition
 
-Each Foundry-hosted agent is a container image built from the same Python codebase (`main.py`), paired with a YAML manifest (`agent.yaml`) that Microsoft Foundry reads at deploy time. All four agents share identical code, tools, and system instructions. The only difference is the model deployment each one targets:
+A _Foundry-hosted agent_ is a containerized AI agent that Microsoft Foundry manages, deploys, and scales: you provide the Python code (`main.py`) and a small YAML manifest (`agent.yaml`), Foundry handles the runtime, the OTel pipeline, and the per-agent identity. The four agents in this kit share identical code, tools, and system instructions; the only difference is the model deployment each one targets:
 
 | Agent | Model | Purpose |
 | --- | --- | --- |
@@ -98,7 +98,7 @@ Six of these tool functions are registered with the `Agent` constructor, and tha
 
 The YAML manifest for the primary agent:
 
-```yaml
+```
 kind: hosted
 name: agent-framework-agent-basic-responses
 protocols:
@@ -146,9 +146,11 @@ Here is what gets deployed when you run the kit, and what each piece lets you do
 
 ### 2.2 Running the kit
 
-The full workflow provisions infrastructure, deploys agents, generates telemetry, runs evaluations, and configures dashboards and alerts automatically.
+**Prerequisites:** an Azure subscription where you have Contributor (or Owner) plus User Access Administrator, PowerShell 7+ (`pwsh`), the Azure CLI (`az`) and Azure Developer CLI (`azd`) installed and on PATH, `az login` completed against the target subscription, and a Python 3.13 venv at the repo root (`.venv/`). The script pre-flights the venv, the `agent/` directory, and both CLIs before any Azure call, so a missing prerequisite fails fast with a remediation hint instead of partway through `azd up`. 
 
-```powershell
+From there, the workflow provisions infrastructure, deploys agents, generates telemetry, runs evaluations, and configures dashboards and alerts automatically.
+
+```
 pwsh -NoProfile -File scripts\run-e2e.ps1 `
     -Region <region> `
     -EnvName <env-name> `
@@ -157,7 +159,7 @@ pwsh -NoProfile -File scripts\run-e2e.ps1 `
 
 For example:
 
-```powershell
+```
 pwsh -NoProfile -File scripts\run-e2e.ps1 `
     -Region eastus2 `
     -EnvName aiobs2-foundry `
@@ -197,7 +199,7 @@ Total time end to end: roughly 35 to 50 minutes. If a phase fails, the script st
 
 After the run completes, validate everything is working:
 
-```powershell
+```
 pwsh -NoProfile -File scripts\validate-deployment.ps1
 ```
 
@@ -222,13 +224,13 @@ After the run completes, the Grafana dashboard and Application Insights pane sho
 
 To tear down a deployment and free the Azure AI Services account name for reuse:
 
-```powershell
+```
 pwsh -NoProfile -File scripts\teardown.ps1 -EnvName <env-name>
 ```
 
 For example:
 
-```powershell
+```
 pwsh -NoProfile -File scripts\teardown.ps1 -EnvName aiobs2-foundry
 ```
 
@@ -238,13 +240,13 @@ This deletes the resource group, purges the Azure AI Services soft-delete (so th
 
 Once the kit is deployed, you do not need to re-run the full 13-phase pipeline to refresh telemetry. Use `scripts/run-adhoc-traffic-and-eval.ps1` to generate a fresh batch of traces, run the agent batch eval over the new traces, and refresh the telemetry export against an existing environment. Typical use cases: a fresh dashboard screenshot, a re-eval after a model or prompt change, or a quick check that the deployment still works after an Azure platform update.
 
-```powershell
+```
 pwsh -NoProfile -File scripts\run-adhoc-traffic-and-eval.ps1 -EnvName <env-name>
 ```
 
 For example:
 
-```powershell
+```
 pwsh -NoProfile -File scripts\run-adhoc-traffic-and-eval.ps1 -EnvName aiobs3-foundry
 ```
 
@@ -268,7 +270,7 @@ The wrapper calls `run-e2e.ps1` with `-SkipPhases 1,2,3,4,5,8,11` (plus `10` whe
 
 Total time end to end: ~15 min by default (~25 min with red-team). Live progress streams to both the console and the log file, so you can also tail it from another terminal:
 
-```powershell
+```
 Get-Content -Wait scripts\e2e-adhoc-run.log
 ```
 
@@ -314,11 +316,11 @@ The kit runs all 8 evaluators in a single batch over the agent's traces stored i
 | tool\_output\_utilization | 55% (6/11) | Strictest process evaluator: did the agent use tool results in its answer? |
 | tool\_call\_success | 82% (9/11) | 2 failures are the intentional error triggers |
 
-Each evaluator requires a `data_mapping` that tells Foundry which trace fields to read. System evaluators need `query` + `response`; process evaluators add `tool_definitions` and `tool_calls`. All evaluators also require `deployment_name` as an initialization parameter. Missing any of these produces a `MissingRequiredDataMapping` error (Foundry's signal that the eval contract is incomplete).
+Each evaluator requires a `data_mapping` that tells Foundry which trace fields to read. System evaluators need `query` + `response`; process evaluators add `tool_definitions` and `tool_calls`. All evaluators also require `deployment_name` as an initialization parameter. Missing any of these produces a `MissingRequiredDataMapping` error (Foundry's signal that the eval contract is incomplete). If you hit it, verify your `data_mapping` dictionary includes every required field for the evaluators you are running, and that those fields actually exist on the App Insights trace records the run is reading from.
 
 ### 3.3 Custom evaluator: compliance phrase check
 
-Built-in evaluators cover agent quality and tool usage, but most teams also need domain-specific checks. Microsoft Foundry supports [custom evaluators](https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-evaluators/custom-evaluators) in two flavors: **code-based** (a Python `grade()` function returning a float 0.0 to 1.0) and **prompt-based** (a judge prompt evaluated by an LLM). The kit demonstrates the code-based pattern with a compliance disclaimer checker.
+Built-in evaluators cover agent quality and tool usage, but most teams also need domain-specific checks. Microsoft Foundry supports [custom evaluators](https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-evaluators/custom-evaluators) in two flavors: **code-based** (a Python `grade()` function returning a float 0.0 to 1.0, deterministic and ideal for pass/fail rules like compliance phrases, format checks, or regex matches) and **prompt-based** (a judge prompt evaluated by an LLM, useful for fuzzy criteria like tone or helpfulness). The kit demonstrates the code-based pattern with a compliance disclaimer checker.
 
 ![Custom evaluator flow](img/eval-custom.png)
 
@@ -432,7 +434,6 @@ The **Agent Framework** dashboard is the broadest of the three, covering operati
 | Agent Performance Summary | Per-agent operations, avg duration, success rate | broken-model at 88.9% success: confirm intentional error agents |
 | Agent Utilization Heatmap | Activity intensity by agent and time bucket | Visualize traffic patterns and idle periods |
 
-
 ### 5.5 Custom dashboards
 
 The kit ships two importable dashboard JSON files in `artifacts/grafana/`. The primary dashboard (`agent-observability-dashboard.json`) provides a full operational overview:
@@ -467,8 +468,7 @@ At a glance:
 | `notebooks/` | Jupyter versions of the eval and red-team flows for live demos |
 | `docs/` | Quickstart, manual deep-dive guide, Grafana guide |
 
-<details>
-<summary><strong>Full file tree</strong></summary>
+**Full file tree**
 
 ```
 /
@@ -534,8 +534,6 @@ At a glance:
     GRAFANA_GUIDE.md                  # Grafana dashboard setup + custom KQL panels
 ```
 
-</details>
-
 ---
 
 ## 7\. Conclusion and next steps
@@ -546,7 +544,7 @@ AI observability is not an add-on. It is a prerequisite for operating agentic sy
 
 Fork the repo and run end to end on your subscription:
 
-```powershell
+```
 git clone https://github.com/jvargh/ai-observability-starter-kit
 cd ai-observability-starter-kit
 pwsh -NoProfile -File scripts\run-e2e.ps1 -Region eastus2 -EnvName aiobs-foundry -SubscriptionId <your-subscription-id>
@@ -554,13 +552,13 @@ pwsh -NoProfile -File scripts\run-e2e.ps1 -Region eastus2 -EnvName aiobs-foundry
 
 ### Learn more
 
-* **[Quickstart](https://github.com/jvargh/ai-observability-starter-kit/tree/main/docs/QUICKSTART.md)**: 6 commands to a deployed kit
-* **[Manual guide](https://github.com/jvargh/ai-observability-starter-kit/tree/main/docs/MANUAL_GUIDE.md)**: step-by-step deep dive for each phase
-* **[Grafana guide](https://github.com/jvargh/ai-observability-starter-kit/tree/main/docs/GRAFANA_GUIDE.md)**: dashboard import and custom KQL panels
-* **Validated reference transcripts** (masked, end-to-end):
-  * [`scripts/e2e-run.log`](https://github.com/jvargh/ai-observability-starter-kit/tree/main/scripts/e2e-run.log): full 13-phase run
-  * [`scripts/e2e-validation.log`](https://github.com/jvargh/ai-observability-starter-kit/tree/main/scripts/e2e-validation.log): 26/26 post-deploy validation
-  * [`scripts/e2e-adhoc-run.log`](https://github.com/jvargh/ai-observability-starter-kit/tree/main/scripts/e2e-adhoc-run.log): ad-hoc traffic + eval refresh
+*   [**Quickstart**](https://github.com/jvargh/ai-observability-starter-kit/tree/main/docs/QUICKSTART.md): 6 commands to a deployed kit
+*   [**Manual guide**](https://github.com/jvargh/ai-observability-starter-kit/tree/main/docs/MANUAL_GUIDE.md): step-by-step deep dive for each phase
+*   [**Grafana guide**](https://github.com/jvargh/ai-observability-starter-kit/tree/main/docs/GRAFANA_GUIDE.md): dashboard import and custom KQL panels
+*   **Validated reference transcripts** (masked, end-to-end):
+    *   [`scripts/e2e-run.log`](https://github.com/jvargh/ai-observability-starter-kit/tree/main/scripts/e2e-run.log): full 13-phase run
+    *   [`scripts/e2e-validation.log`](https://github.com/jvargh/ai-observability-starter-kit/tree/main/scripts/e2e-validation.log): 26/26 post-deploy validation
+    *   [`scripts/e2e-adhoc-run.log`](https://github.com/jvargh/ai-observability-starter-kit/tree/main/scripts/e2e-adhoc-run.log): ad-hoc traffic + eval refresh
 
 ### Connect and contribute
 
